@@ -28,9 +28,9 @@ client.on('message', async message => {
         usuariosAtendidos.add(numeroCliente);
         return message.reply(
             "Olá, tudo bem? Como podemos te ajudar?\n\n" +
-            "1️⃣ - Como comprar?\n" +
+            "1️⃣ - Duvidas sobre como comprar?\n" +
             "2️⃣ - Trocas\n" +
-            "3️⃣ - Pagamentos\n" +
+            "3️⃣ - Para pagamentos\n" +
             "4️⃣ - Falar com atendente\n" +
             "5️⃣ - Encerrar atendimento"
         );

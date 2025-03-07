@@ -1,7 +1,7 @@
 console.log("Iniciando o bot...");
 
 const { Client, LocalAuth } = require('whatsapp-web.js');
-const qrcode = require('qrcode-terminal');
+const qrcode = require('qrcode'); 
 
 const client = new Client({
     authStrategy: new LocalAuth()
@@ -9,9 +9,18 @@ const client = new Client({
 
 let usuariosAtendidos = new Map();
 
-client.on('qr', (qr) => {
-    console.log('Escaneie o QR Code abaixo para conectar:');
-    qrcode.generate(qr, { small: true });
+client.on('qr', async (qr) => {
+    console.log('Gerando QR Code...');
+    try {
+        // Gera o QR Code com um tamanho personalizado (exemplo: 200px de largura)
+        const qrCodeUrl = await qrcode.toDataURL(qr, { width: 200 });
+        console.log('Escaneie o QR Code acessando este link ou copie-o para o navegador:');
+        console.log(qrCodeUrl);
+        
+    
+    } catch (err) {
+        console.error('Erro ao gerar QR Code:', err);
+    }
 });
 
 client.on('ready', () => {

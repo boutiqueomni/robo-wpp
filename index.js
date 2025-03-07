@@ -11,8 +11,9 @@ const client = new Client({
 let usuariosAtendidos = new Map();
 
 client.on('qr', (qr) => {
-    console.log('Escaneie o QR Code abaixo:');
-    qrcode.generate(qr, { small: true }); // Exibe o QR Code como texto ASCII
+    console.log('Escaneie o QR Code usando esta string:');
+    console.log(qr); // Exibe a string bruta do QR code
+    console.log('Copie o texto acima e use um gerador de QR como https://qr.io/');
 });
 
 client.on('ready', () => {

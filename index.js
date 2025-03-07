@@ -1,10 +1,11 @@
 console.log("Iniciando o bot...");
 
 const { Client, LocalAuth } = require('whatsapp-web.js');
-const qrcode = require('qrcode'); 
+const qrcode = require('qrcode-terminal');
 
-const client = new Client({
-    authStrategy: new LocalAuth()
+client.on('qr', (qr) => {
+    console.log('Escaneie o QR Code abaixo:');
+    qrcode.generate(qr, { small: true }); // 'small: true' reduz o tamanho
 });
 
 let usuariosAtendidos = new Map();

@@ -5,8 +5,9 @@ const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 
 const client = new Client({
-    authStrategy: new LocalAuth()
+    authStrategy: new LocalAuth({ dataPath: process.env.WHATSAPP_SESSION_PATH })
 });
+
 
 let usuariosAtendidos = new Map();
 

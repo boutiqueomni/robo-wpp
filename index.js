@@ -4,16 +4,14 @@ const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 
 const client = new Client({
-    authStrategy: new LocalAuth({ dataPath: process.env.WHATSAPP_SESSION_PATH || '/tmp/session' })
+    authStrategy: new LocalAuth()
 });
-
 
 let usuariosAtendidos = new Map();
 
 client.on('qr', (qr) => {
-    console.log('Escaneie o QR Code usando esta string:');
-    console.log(qr); // Exibe a string bruta do QR code
-    console.log('Copie o texto acima e use um gerador de QR como https://qr.io/');
+    console.log('Gerando QR Code no terminal...');
+    qrcode.generate(qr, { small: true });
 });
 
 client.on('ready', () => {
@@ -28,12 +26,27 @@ const MENU_INICIAL =
     "4️⃣ - Consultar tamanhos e estoque\n" +
     "5️⃣ - Novidades e promoções\n" +
     "6️⃣ - Falar com um atendente\n" +
-    "7️⃣ - Encerrar atendimento";
+    "7️⃣ - Encerrar atendimento\n\n" +
+    "Digite 'iniciar' a qualquer momento para voltar ao menu!";
 
 client.on('message', async message => {
     const msg = message.body.trim().toLowerCase();
     const numeroCliente = message.from;
+    
+    // Ignorar mensagens de grupos
+    if (message.from.includes('@g.us')) {
+        return;
+    }
 
+    console.log(`Mensagem recebida de ${numeroCliente}: ${msg}`);
+
+    // Verificar se o cliente quer reiniciar o atendimento
+    if (msg === 'iniciar') {
+        usuariosAtendidos.set(numeroCliente, { etapa: 'menu_inicial', ativo: true });
+        return message.reply(MENU_INICIAL);
+    }
+
+    // Se o cliente não está no Map, inicia um novo atendimento
     if (!usuariosAtendidos.has(numeroCliente)) {
         usuariosAtendidos.set(numeroCliente, { etapa: 'menu_inicial', ativo: true });
         return message.reply(MENU_INICIAL);
@@ -49,55 +62,26 @@ client.on('message', async message => {
         switch (msg) {
             case "1":
                 return message.reply(
-                    "🛒 Para comprar, é super fácil! Acesse *www.boutiqueomni.com.br*, escolha suas peças favoritas, adicione ao carrinho e finalize o pedido. " +
-                    "Dúvidas?\n" +
-                    "a) Rastrear pedido\n" +
-                    "b) Prazos de entrega\n" +
-                    "c) Voltar ao menu principal"
+                    "🛒 Para comprar, acesse *www.boutiqueomni.com.br*, escolha suas peças favoritas, adicione ao carrinho e finalize o pedido.\n" +
+                    "1️⃣ - Rastrear pedido\n" +
+                    "2️⃣ - Prazos de entrega\n" +
+                    "3️⃣ - Voltar ao menu principal"
                 ).then(() => usuariosAtendidos.set(numeroCliente, { etapa: 'como_comprar', ativo: true }));
-            case "2":
-                return message.reply(
-                    "🔄 Trocas e devoluções são tranquilas! Você tem até 7 dias após o recebimento para solicitar. " +
-                    "Veja mais em *www.boutiqueomni.com.br/politica-troca*.\n" +
-                    "Quer ajuda com:\n" +
-                    "a) Como iniciar uma troca\n" +
-                    "b) Reembolso\n" +
-                    "c) Voltar ao menu principal"
-                ).then(() => usuariosAtendidos.set(numeroCliente, { etapa: 'trocas', ativo: true }));
-            case "3":
-                return message.reply(
-                    "💳 Temos várias opções pra você: PIX, crédito em até 5x sem juros\n" +
-                    "Escolha na hora de finalizar!\n" +
-                    "Mais detalhes?\n" +
-                    "a) PIX\n" +
-                    "b) Parcelamento\n" +
-                    "c) Voltar ao menu principal"
-                ).then(() => usuariosAtendidos.set(numeroCliente, { etapa: 'pagamento', ativo: true }));
-            case "4":
-                return message.reply(
-                    "👗 Quer saber se aquela peça dos sonhos está disponível? Me diz:\n" +
-                    "a) Consultar tamanho\n" +
-                    "b) Verificar estoque\n" +
-                    "c) Voltar ao menu principal"
-                ).then(() => usuariosAtendidos.set(numeroCliente, { etapa: 'tamanhos_estoque', ativo: true }));
-            case "5":
-                return message.reply(
-                    "✨ Temos novidades toda semana! Quer conferir?\n" +
-                    "a) Lançamentos\n" +
-                    "b) Promoções do mês\n" +
-                    "c) Voltar ao menu principal"
-                ).then(() => usuariosAtendidos.set(numeroCliente, { etapa: 'novidades', ativo: true }));
+
             case "6":
                 usuariosAtendidos.set(numeroCliente, { etapa: 'menu_inicial', ativo: false });
                 return message.reply(
-                    "📞 Beleza, vou chamar um atendente pra te ajudar! Nosso horário é de segunda a sexta, das 9h às 17h. " +
-                    "Aguarde um pouquinho!"
+                    "📞 Um atendente foi acionado! Aguarde um momento.\n\n" +
+                    "Para voltar ao menu, diga 'iniciar'!"
                 );
+
             case "7":
                 usuariosAtendidos.set(numeroCliente, { etapa: 'menu_inicial', ativo: false });
                 return message.reply(
-                    "👋 Atendimento encerrado! Foi um prazer te ajudar. Volte quando quiser, viu? 💖"
+                    "👋 Atendimento encerrado! Foi um prazer te ajudar. Volte quando quiser! 💖\n\n" +
+                    "Para começar de novo, é só dizer 'iniciar'!"
                 );
+
             default:
                 return message.reply(
                     "Ops, opção inválida! Escolha entre 1 e 7 para continuar. 😊"

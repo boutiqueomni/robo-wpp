@@ -4,13 +4,17 @@ const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 
 const client = new Client({
-    authStrategy: new LocalAuth()
+    authStrategy: new LocalAuth(), // Mantém a sessão salva
+    puppeteer: {
+        headless: true, // Garante que rode sem interface gráfica na nuvem
+        args: ["--no-sandbox", "--disable-setuid-sandbox"] // Evita erros no ambiente do Render
+    }
 });
 
 let usuariosAtendidos = new Map();
 
 client.on('qr', (qr) => {
-    console.log('Gerando QR Code no terminal...');
+    console.log('Escaneie o QR Code para conectar:');
     qrcode.generate(qr, { small: true });
 });
 
@@ -37,8 +41,6 @@ client.on('message', async message => {
     if (message.from.includes('@g.us')) {
         return;
     }
-
-    console.log(`Mensagem recebida de ${numeroCliente}: ${msg}`);
 
     // Verificar se o cliente quer reiniciar o atendimento
     if (msg === 'iniciar') {

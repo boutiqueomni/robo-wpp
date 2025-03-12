@@ -1,22 +1,12 @@
 console.log("Iniciando o bot...");
 
 const { Client, LocalAuth } = require('whatsapp-web.js');
-const qrcode = require('qrcode-terminal');
 
 const client = new Client({
-    authStrategy: new LocalAuth(), // Mantém a sessão salva
-    puppeteer: {
-        headless: true, // Garante que rode sem interface gráfica na nuvem
-        args: ["--no-sandbox", "--disable-setuid-sandbox"] // Evita erros no ambiente do Render
-    }
+    authStrategy: new LocalAuth() // Mantém a sessão ativa após autenticação
 });
 
 let usuariosAtendidos = new Map();
-
-client.on('qr', (qr) => {
-    console.log('Escaneie o QR Code para conectar:');
-    qrcode.generate(qr, { small: true });
-});
 
 client.on('ready', () => {
     console.log('Bot conectado e pronto para responder!');
@@ -63,12 +53,37 @@ client.on('message', async message => {
     if (estadoAtual.etapa === 'menu_inicial') {
         switch (msg) {
             case "1":
+                usuariosAtendidos.set(numeroCliente, { etapa: 'como_comprar', ativo: true });
                 return message.reply(
-                    "🛒 Para comprar, acesse *www.boutiqueomni.com.br*, escolha suas peças favoritas, adicione ao carrinho e finalize o pedido.\n" +
+                    "🛒 Para comprar, acesse *www.boutiqueomni.com.br*, escolha suas peças favoritas, adicione ao carrinho e finalize o pedido.\n\n" +
                     "1️⃣ - Rastrear pedido\n" +
                     "2️⃣ - Prazos de entrega\n" +
                     "3️⃣ - Voltar ao menu principal"
-                ).then(() => usuariosAtendidos.set(numeroCliente, { etapa: 'como_comprar', ativo: true }));
+                );
+
+            case "2":
+                return message.reply(
+                    "🔄 Para trocas e devoluções, acesse *www.boutiqueomni.com.br/trocas* e siga as instruções.\n" +
+                    "Caso precise de mais ajuda, diga '6' para falar com um atendente."
+                );
+
+            case "3":
+                return message.reply(
+                    "💳 Aceitamos as seguintes formas de pagamento:\n\n" +
+                    "✅ Cartão de crédito e débito\n" +
+                    "✅ Pix\n" +
+                    "Dúvidas? Diga '6' para falar com um atendente."
+                );
+
+            case "4":
+                return message.reply(
+                    "📏 Para consultar tamanhos e estoque, nos informe qual o item você está querendo? "
+                );
+
+            case "5":
+                return message.reply(
+                    "🔥 Para conferir as últimas novidades e promoções, visite nossa página de ofertas em *www.boutiqueomni.com.br/promocoes*."
+                );
 
             case "6":
                 usuariosAtendidos.set(numeroCliente, { etapa: 'menu_inicial', ativo: false });
@@ -86,7 +101,7 @@ client.on('message', async message => {
 
             default:
                 return message.reply(
-                    "Ops, opção inválida! Escolha entre 1 e 7 para continuar. 😊"
+                    "❌ Opção inválida! Escolha entre 1 e 7 para continuar. 😊"
                 );
         }
     }

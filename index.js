@@ -1,12 +1,30 @@
 console.log("Iniciando o bot...");
 
 const { Client, LocalAuth } = require('whatsapp-web.js');
+const qrcode = require('qrcode'); // Importar a biblioteca qrcode
 
+// Configurar o cliente com autenticação persistente
 const client = new Client({
-    authStrategy: new LocalAuth() // Mantém a sessão ativa após autenticação
+    authStrategy: new LocalAuth() // Salva a sessão localmente
 });
 
 let usuariosAtendidos = new Map();
+
+
+const NUMERO_ATENDENTE = "5511986480047@c.us"; 
+
+client.on('qr', (qr) => {
+    console.log('Gerando QR Code...');
+    // Gerar o QR Code no terminal em tamanho menor
+    qrcode.toString(qr, { type: 'terminal', small: true }, (err, url) => {
+        if (err) {
+            console.error('Erro ao gerar QR Code:', err);
+            return;
+        }
+        console.log(url); // Exibe o QR Code no terminal
+        console.log('Escaneie o QR Code acima com o WhatsApp! (Apenas na primeira vez)');
+    });
+});
 
 client.on('ready', () => {
     console.log('Bot conectado e pronto para responder!');
@@ -23,12 +41,21 @@ const MENU_INICIAL =
     "7️⃣ - Encerrar atendimento\n\n" +
     "Digite 'iniciar' a qualquer momento para voltar ao menu!";
 
-client.on('message', async message => {
+client.on('message', async (message) => {
     const msg = message.body.trim().toLowerCase();
     const numeroCliente = message.from;
-    
+
     // Ignorar mensagens de grupos
     if (message.from.includes('@g.us')) {
+        return;
+    }
+
+    // Verificar se é o atendente tentando encerrar o bot
+    if (numeroCliente === NUMERO_ATENDENTE && msg === 'encerrar bot') {
+        console.log('Bot encerrado pelo atendente.');
+        await message.reply('Bot encerrado pelo atendente. Até logo! 👋');
+        await client.destroy(); // Desconecta o cliente
+        process.exit(0); // Encerra o processo do Node.js
         return;
     }
 
@@ -76,13 +103,15 @@ client.on('message', async message => {
                 );
 
             case "4":
+                usuariosAtendidos.set(numeroCliente, { etapa: 'menu_inicial', ativo: false });
                 return message.reply(
-                    "📏 Para consultar tamanhos e estoque, nos informe qual o item você está querendo? "
+                    "📏 Para consultar tamanhos e estoque, nos informe qual o item você está querendo?\n\n" +
+                    "A partir de agora, um atendente vai te ajudar. Para voltar ao menu, diga 'iniciar'!"
                 );
 
             case "5":
                 return message.reply(
-                    "🔥 Para conferir as últimas novidades e promoções, visite nossa página de ofertas em *www.boutiqueomni.com.br/promocoes*."
+                    "🔥 Para conferir as últimas novidades e promoções, visite nossa página de ofertas em *www.boutiqueomni.com.br*."
                 );
 
             case "6":
@@ -105,6 +134,10 @@ client.on('message', async message => {
                 );
         }
     }
+});
+
+client.on('error', (error) => {
+    console.error('Erro no bot:', error);
 });
 
 client.initialize();

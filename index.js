@@ -1,34 +1,14 @@
 console.log("Iniciando o bot...");
 
 const { Client, LocalAuth } = require('whatsapp-web.js');
-const qrcode = require('qrcode'); // Importar a biblioteca qrcode
+const qrcode = require('qrcode');
 
-// Configurar o cliente com autenticação persistente
 const client = new Client({
-    authStrategy: new LocalAuth() // Salva a sessão localmente
+    authStrategy: new LocalAuth()
 });
 
 let usuariosAtendidos = new Map();
-
-
 const NUMERO_ATENDENTE = "5511986480047@c.us"; 
-
-client.on('qr', (qr) => {
-    console.log('Gerando QR Code...');
-    // Gerar o QR Code no terminal em tamanho menor
-    qrcode.toString(qr, { type: 'terminal', small: true }, (err, url) => {
-        if (err) {
-            console.error('Erro ao gerar QR Code:', err);
-            return;
-        }
-        console.log(url); // Exibe o QR Code no terminal
-        console.log('Escaneie o QR Code acima com o WhatsApp! (Apenas na primeira vez)');
-    });
-});
-
-client.on('ready', () => {
-    console.log('Bot conectado e pronto para responder!');
-});
 
 const MENU_INICIAL = 
     "Oi, tudo bem? Bem-vindo(a) à *Boutique Omni*! 💃🕺 Como posso te ajudar hoje?\n\n" +
@@ -41,31 +21,43 @@ const MENU_INICIAL =
     "7️⃣ - Encerrar atendimento\n\n" +
     "Digite 'iniciar' a qualquer momento para voltar ao menu!";
 
+client.on('qr', (qr) => {
+    console.log('Gerando QR Code...');
+    qrcode.toString(qr, { type: 'terminal', small: true }, (err, url) => {
+        if (err) {
+            console.error('Erro ao gerar QR Code:', err);
+            return;
+        }
+        console.log(url);
+        console.log('Escaneie o QR Code acima com o WhatsApp! (Apenas na primeira vez)');
+    });
+});
+
+client.on('ready', () => {
+    console.log('Bot conectado e pronto para responder!');
+});
+
 client.on('message', async (message) => {
     const msg = message.body.trim().toLowerCase();
     const numeroCliente = message.from;
 
-    // Ignorar mensagens de grupos
     if (message.from.includes('@g.us')) {
         return;
     }
 
-    // Verificar se é o atendente tentando encerrar o bot
     if (numeroCliente === NUMERO_ATENDENTE && msg === 'encerrar bot') {
         console.log('Bot encerrado pelo atendente.');
         await message.reply('Bot encerrado pelo atendente. Até logo! 👋');
-        await client.destroy(); // Desconecta o cliente
-        process.exit(0); // Encerra o processo do Node.js
+        await client.destroy();
+        process.exit(0);
         return;
     }
 
-    // Verificar se o cliente quer reiniciar o atendimento
     if (msg === 'iniciar') {
         usuariosAtendidos.set(numeroCliente, { etapa: 'menu_inicial', ativo: true });
         return message.reply(MENU_INICIAL);
     }
 
-    // Se o cliente não está no Map, inicia um novo atendimento
     if (!usuariosAtendidos.has(numeroCliente)) {
         usuariosAtendidos.set(numeroCliente, { etapa: 'menu_inicial', ativo: true });
         return message.reply(MENU_INICIAL);
@@ -77,6 +69,7 @@ client.on('message', async (message) => {
         return;
     }
 
+    // Tratamento do menu inicial
     if (estadoAtual.etapa === 'menu_inicial') {
         switch (msg) {
             case "1":
@@ -89,12 +82,14 @@ client.on('message', async (message) => {
                 );
 
             case "2":
+                usuariosAtendidos.set(numeroCliente, { etapa: 'menu_inicial', ativo: true });
                 return message.reply(
                     "🔄 Para trocas e devoluções, acesse *www.boutiqueomni.com.br/trocas* e siga as instruções.\n" +
                     "Caso precise de mais ajuda, diga '6' para falar com um atendente."
                 );
 
             case "3":
+                usuariosAtendidos.set(numeroCliente, { etapa: 'menu_inicial', ativo: true });
                 return message.reply(
                     "💳 Aceitamos as seguintes formas de pagamento:\n\n" +
                     "✅ Cartão de crédito e débito\n" +
@@ -103,19 +98,20 @@ client.on('message', async (message) => {
                 );
 
             case "4":
-                usuariosAtendidos.set(numeroCliente, { etapa: 'menu_inicial', ativo: false });
+                usuariosAtendidos.set(numeroCliente, { etapa: 'aguardando_atendente', ativo: false });
                 return message.reply(
                     "📏 Para consultar tamanhos e estoque, nos informe qual o item você está querendo?\n\n" +
                     "A partir de agora, um atendente vai te ajudar. Para voltar ao menu, diga 'iniciar'!"
                 );
 
             case "5":
+                usuariosAtendidos.set(numeroCliente, { etapa: 'menu_inicial', ativo: true });
                 return message.reply(
                     "🔥 Para conferir as últimas novidades e promoções, visite nossa página de ofertas em *www.boutiqueomni.com.br*."
                 );
 
             case "6":
-                usuariosAtendidos.set(numeroCliente, { etapa: 'menu_inicial', ativo: false });
+                usuariosAtendidos.set(numeroCliente, { etapa: 'aguardando_atendente', ativo: false });
                 return message.reply(
                     "📞 Um atendente foi acionado! Aguarde um momento.\n\n" +
                     "Para voltar ao menu, diga 'iniciar'!"
@@ -131,6 +127,30 @@ client.on('message', async (message) => {
             default:
                 return message.reply(
                     "❌ Opção inválida! Escolha entre 1 e 7 para continuar. 😊"
+                );
+        }
+    }
+
+    // Tratamento da etapa "como_comprar"
+    if (estadoAtual.etapa === 'como_comprar') {
+        switch (msg) {
+            case "1":
+                return message.reply(
+                    "📦 Para rastrear seu pedido, acesse *www.boutiqueomni.com.br/rastreamento* com o código enviado no seu e-mail."
+                );
+
+            case "2":
+                return message.reply(
+                    "🚚 O prazo de entrega varia de 3 a 10 dias úteis, dependendo da sua região. Confira mais detalhes no checkout!"
+                );
+
+            case "3":
+                usuariosAtendidos.set(numeroCliente, { etapa: 'menu_inicial', ativo: true });
+                return message.reply(MENU_INICIAL);
+
+            default:
+                return message.reply(
+                    "❌ Opção inválida! Escolha entre 1, 2 ou 3. 😊"
                 );
         }
     }

@@ -136,12 +136,12 @@ client.on('message', async (message) => {
         switch (msg) {
             case "1":
                 return message.reply(
-                    "📦 Para rastrear seu pedido, acesse *www.boutiqueomni.com.br/rastreamento* com o código enviado no seu e-mail."
+                    "📦 Para rastrear seu pedido, verifique a sua caixa de e-mail, e procure por Boutique Omni, até no Spam"
                 );
 
             case "2":
                 return message.reply(
-                    "🚚 O prazo de entrega varia de 3 a 10 dias úteis, dependendo da sua região. Confira mais detalhes no checkout!"
+                    "🚚 O prazo de entrega varia de 5 a 15 dias úteis, dependendo da sua região. Confira mais detalhes no checkout!"
                 );
 
             case "3":
